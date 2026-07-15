@@ -8,19 +8,19 @@
 
 ## Problem
 
-Across the African continent, rural farmers face massive agricultural challenges—ranging from rapidly spreading pests like Fall Armyworm to viral infections like Cassava Mosaic Disease. Unfortunately, agricultural extension officers are chronically understaffed, and farmers often operate in regions with little to no internet connectivity. 
+Across the African continent, it is no news or mystery that rural farmers face massive agricultural challenges, ranging from rapidly spreading pests like Fall Armyworm to viral infections like the Cassava Mosaic Disease. Unfortunately, agricultural extension officers are chronically understaffed, and most farmers operate in regions where the internet network connection is poor or none at all. This creates an opportunity to bridge the gap by bringing AI directly to them.
 
-**AgriTriage AI** solves this by providing a hyper-local, entirely offline Retrieval-Augmented Generation (RAG) advisory system. By embedding agricultural data natively and running on budget consumer laptops, extension officers and farmers can receive instantaneous, highly-accurate diagnostics and management strategies without needing cloud access.
+**AgriTriage AI** is an entirely offline Retrieval-Augmented Generation (RAG) advisory system. By embedding standard agricultural manuals natively and running on budget consumer laptops, extension officers and farmers can receive instantaneous, highly accurate diagnostics and crop management strategies without needing any cloud access.
 
 ---
 
 ## Design Decisions
 
-- **Base model:** Llama-3.2-1B-Instruct. We selected the 1B variant as it offers an unparalleled balance of instruction-following capability while being exceptionally lightweight for consumer-grade laptops.
+- **Base model:** Llama-3.2-1B-Instruct. The 1B variantwas selected, as it offers an unparalleled balance of instruction-following capability while being exceptionally lightweight for consumer-grade laptops.
 - **Quantization:** GGUF Q4_K_M. This 4-bit quantization reduces the memory footprint significantly while maintaining the vast majority of the model's reasoning capabilities, making it the sweet spot for a strict 8GB RAM limit.
 - **Alternatives considered:** 
-  - *Llama 3 8B (Q4_K_M)*: Rejected because its memory footprint approached 5GB, leaving too little overhead for the OS and the Tauri/React GUI in an 8GB environment, risking OOM crashes.
-  - *Phi-3 Mini*: Evaluated, but Llama 3.2 1B exhibited stronger adherence to agricultural RAG contexts without hallucinating.
+  - *Llama 3 8B (Q4_K_M)*: was rejected because its memory footprint approached 5GB, leaving too little overhead for the OS and the Tauri/React GUI in an 8GB environment, risking OOM crashes.
+  - *Phi-3 Mini*: was also evaluated, but Llama 3.2 1B exhibited stronger adherence to agricultural RAG contexts without hallucinating.
 
 ---
 
