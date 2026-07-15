@@ -99,14 +99,14 @@ class LocalRAGPipeline:
         context_chunks = self.search(query)
         context = "\n".join(context_chunks)
         
-        prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are an agricultural assistant. ONLY use the provided context to answer. If you do not know, say 'I don't know'.\n\nContext:\n{context}<|eot_id|>\n"
+        prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are an expert Agricultural Extension Assistant. You must follow these rules:\n1. If the provided Context contains facts relevant to the Question (like dates, methods, or numbers), you MUST use those facts to answer.\n2. If the Context is completely irrelevant to the Question (e.g. general definitions), you may use your general agricultural knowledge to answer.\n3. Answer naturally and directly as an expert. NEVER use phrases like 'Based on the context' or 'According to the text'.<|eot_id|>\n"
         
         for msg in history:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             prompt += f"<|start_header_id|>{role}<|end_header_id|>\n\n{content}<|eot_id|>\n"
             
-        prompt += f"<|start_header_id|>user<|end_header_id|>\n\n{query}<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\n\n"
+        prompt += f"<|start_header_id|>user<|end_header_id|>\n\nContext:\n{context}\n\nQuestion: {query}\n\nAnswer the question naturally and directly as an expert. Remember: ONLY use facts from the context, but do NOT explicitly reference the context in your wording. If the answer is not in the context, just say 'I don't know'.<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\n\n"
 
         if self.llm:
             response = self.llm(
@@ -122,7 +122,7 @@ class LocalRAGPipeline:
 
 # --- Usage Example ---
 if __name__ == "__main__":
-    model_file = "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+    model_file = "../../model/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
     rag = LocalRAGPipeline(model_file)
     
     # Load sample data

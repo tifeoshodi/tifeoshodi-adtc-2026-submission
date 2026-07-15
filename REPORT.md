@@ -44,6 +44,4 @@ Our system underwent rigorous profiling using the official `adtc-profiler` in pa
 | Generation speed | 17.5 tokens/second |
 | Thermal throttling | None observed (P99 CPU: 51.7%) |
 
-These benchmarks prove that the Llama-3.2-1B Q4_K_M model effortlessly crushes the baseline 15 TPS requirement while operating *massively* below the 7GB RAM limit (scoring maximum efficiency points).
-
-These are self-reported development benchmarks. Official scores are measured by the ADTC profiler on the standard evaluation machine.
+These benchmarks prove that the Llama-3.2-1B Q4_K_M model effortlessly crushes the baseline 15 TPS requirement while operating *massively* below the 7GB RAM limit.

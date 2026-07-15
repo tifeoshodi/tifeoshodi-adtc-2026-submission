@@ -11,7 +11,7 @@ rag = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global rag
-    model_path = "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+    model_path = "../../model/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
     rag = LocalRAGPipeline(model_path)
     
     if rag.index.ntotal == 0:
