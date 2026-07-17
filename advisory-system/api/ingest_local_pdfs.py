@@ -38,12 +38,18 @@ def main():
 
     extracted_text = "### HIGH-QUALITY IITA & CGIAR SOURCE DATA ###\n\n"
     
-    pdf_files = [f for f in os.listdir(SOURCES_DIR) if f.lower().endswith('.pdf')]
-    print(f"Found {len(pdf_files)} PDFs to process.")
+    files_to_process = [f for f in os.listdir(SOURCES_DIR) if f.lower().endswith(('.pdf', '.txt'))]
+    print(f"Found {len(files_to_process)} files to process.")
 
-    for filename in pdf_files:
+    for filename in files_to_process:
         filepath = os.path.join(SOURCES_DIR, filename)
-        text = extract_text_from_pdf(filepath)
+        
+        if filename.lower().endswith('.txt'):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                text = clean_text(f.read())
+        else:
+            text = extract_text_from_pdf(filepath)
+            
         if text:
             extracted_text += f"\n\n--- SOURCE: {filename} ---\n\n"
             extracted_text += text

@@ -50,18 +50,51 @@ class LocalRAGPipeline:
             return True
         return False
 
-    def ingest_document(self, text, chunk_size=100, overlap=20):
-        """Splits text into overlapping chunks and adds to the FAISS index."""
+    def ingest_document(self, text, max_words=200):
+        """Splits text into semantic paragraphs and adds to the FAISS index with source metadata."""
+        import re
         words = text.split()
         if not words:
             return
             
         paragraphs = []
-        for i in range(0, len(words), max(1, chunk_size - overlap)):
-            chunk = " ".join(words[i:i + chunk_size])
-            paragraphs.append(chunk)
-            if i + chunk_size >= len(words):
-                break
+        
+        # Split the text by double newlines to preserve paragraph boundaries
+        raw_chunks = re.split(r'\n\s*\n', text)
+        
+        current_source = "Unknown Source"
+        current_chunk = []
+        current_word_count = 0
+        
+        for p in raw_chunks:
+            p = p.strip()
+            if not p:
+                continue
+                
+            # Detect source headers
+            source_match = re.match(r'^--- SOURCE:\s*(.*?)\s*---$', p)
+            if source_match:
+                # If we have a pending chunk, save it
+                if current_chunk:
+                    paragraphs.append(f"Source: {current_source}\n" + " ".join(current_chunk))
+                    current_chunk = []
+                    current_word_count = 0
+                current_source = source_match.group(1)
+                continue
+                
+            words_in_p = p.split()
+            word_count = len(words_in_p)
+            
+            if current_word_count + word_count > max_words and current_chunk:
+                paragraphs.append(f"Source: {current_source}\n" + " ".join(current_chunk))
+                current_chunk = []
+                current_word_count = 0
+                
+            current_chunk.append(p)
+            current_word_count += word_count
+            
+        if current_chunk:
+            paragraphs.append(f"Source: {current_source}\n" + " ".join(current_chunk))
         
         if not paragraphs:
             return
@@ -73,9 +106,9 @@ class LocalRAGPipeline:
         # Add to index
         self.index.add(embeddings)
         self.documents.extend(paragraphs)
-        print(f"Ingested {len(paragraphs)} paragraphs.")
+        print(f"Ingested {len(paragraphs)} semantic paragraphs with metadata.")
 
-    def search(self, query, top_k=2):
+    def search(self, query, top_k=5):
         """Searches the vector store for the most relevant context."""
         if self.index.ntotal == 0:
             return []
@@ -99,14 +132,14 @@ class LocalRAGPipeline:
         context_chunks = self.search(query)
         context = "\n".join(context_chunks)
         
-        prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are an expert Agricultural Extension Assistant. You must follow these rules:\n1. If the provided Context contains facts relevant to the Question (like dates, methods, or numbers), you MUST use those facts to answer.\n2. If the Context is completely irrelevant to the Question (e.g. general definitions), you may use your general agricultural knowledge to answer.\n3. Answer naturally and directly as an expert. NEVER use phrases like 'Based on the context' or 'According to the text'.<|eot_id|>\n"
+        prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are an expert Agricultural Extension Assistant. You must strictly follow these rules:\n1. PRIMARY SOURCE: For questions about specific farming practices (e.g., planting dates, disease management, methods), you MUST use ONLY the facts found in the provided Context.\n2. MISSING INFO: If the Context lacks the specific facts needed for a practice-related question, you MUST output exactly: 'I don't know'. DO NOT guess or hallucinate.\n3. GENERAL KNOWLEDGE: For general definitions or basic crop concepts (e.g., 'What is a yam?'), you may use your internal knowledge to provide a brief, factual answer.\n4. SAFETY: NEVER recommend specific chemical dosages or unverified treatments unless explicitly stated in the Context.\n5. TONE: Answer directly and professionally. NEVER mention the context (e.g., do not say 'According to the text').<|eot_id|>\n"
         
         for msg in history:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             prompt += f"<|start_header_id|>{role}<|end_header_id|>\n\n{content}<|eot_id|>\n"
             
-        prompt += f"<|start_header_id|>user<|end_header_id|>\n\nContext:\n{context}\n\nQuestion: {query}\n\nAnswer the question naturally and directly as an expert. Remember: ONLY use facts from the context, but do NOT explicitly reference the context in your wording. If the answer is not in the context, just say 'I don't know'.<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\n\n"
+        prompt += f"<|start_header_id|>user<|end_header_id|>\n\nContext:\n{context}\n\nQuestion: {query}\n\nAnswer the question naturally and directly as an expert. Remember: ONLY use facts from the context. If the answer is not in the context, just say 'I don't know'.<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\n\n"
 
         if self.llm:
             response = self.llm(
